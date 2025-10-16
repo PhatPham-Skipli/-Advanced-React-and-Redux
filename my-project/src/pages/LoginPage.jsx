@@ -1,13 +1,16 @@
-import React, { useState } from 'react'
+import React, { useState, useContext, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { IoPersonOutline, IoLockClosedOutline, IoEyeOffOutline, IoEyeOutline } from 'react-icons/io5'
 import { toast } from 'react-toastify'
+import AuthContext from '../context/AuthContext'
+import { Link } from 'react-router-dom';
 
 const LoginPage = () => {
-  const [formData, setFormData] = useState({ username: '', password: '' })
-  const [isPasswordVisible, setIsPasswordVisible] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const navigate = useNavigate()
+  const [formData, setFormData] = useState({ identifier: '', password: '' });
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const { handleLogin, user } = useContext(AuthContext);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
@@ -18,18 +21,31 @@ const LoginPage = () => {
   }
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    if (!formData.username || !formData.password) {
-      toast.error('Please fill in all fields')
-      return
+    e.preventDefault();
+    if (!formData.identifier || !formData.password) {
+      toast.error('Please fill in all fields');
+      return;
     }
-    setLoading(true)
-    setTimeout(() => {
-      setLoading(false)
-      toast.success('Login successful!')
-      navigate('/')
-    }, 1200)
-  }
+    setLoading(true);
+    try {
+      await handleLogin(formData);
+      toast.success('Login successful!');
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Login failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      if (user.role === 'ADMIN') {
+        navigate('/admin/accounts');
+      } else {
+        navigate('/');
+      }
+    }
+  }, [user, navigate]);
 
   return (
     <div className="relative w-full min-h-screen flex items-center justify-center overflow-hidden">
@@ -41,28 +57,27 @@ const LoginPage = () => {
       <div className="max-w-md w-full space-y-8 relative z-10">
         <div className="text-center">
           <div className="flex items-center justify-center gap-2">
-            <span className="text-4xl font-bold gradient-text mb-2">Login</span>
+            <span className="text-4xl font-bold bg-gradient-to-r from-purple-500 to-blue-500 bg-clip-text text-transparent mb-2">Login</span>
           </div>
-          <p className="text-gray-600 text-lg">Sign in to comment</p>
+          <p className="text-gray-600 text-lg">Sign in to your account</p>
         </div>
 
         <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
-                Username
+              <label htmlFor="identifier" className="block text-sm font-medium text-gray-700 mb-2">
+                Username or Email
               </label>
               <div className="relative">
                 <IoPersonOutline className="absolute top-1/2 left-3 transform -translate-y-1/2 text-gray-400 text-lg" />
                 <input
-                  id="username"
-                  name="username"
+                  id="identifier"
+                  name="identifier"
                   type="text"
-                  autoComplete="username"
                   required
                   className="block w-full rounded-lg border border-gray-200 py-2 pl-10 pr-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition"
-                  placeholder="Enter your username"
-                  value={formData.username}
+                  placeholder="Enter your username or email"
+                  value={formData.identifier}
                   onChange={handleChange}
                 />
               </div>
@@ -78,7 +93,6 @@ const LoginPage = () => {
                   id="password"
                   name="password"
                   type={isPasswordVisible ? 'text' : 'password'}
-                  autoComplete="current-password"
                   required
                   className="block w-full rounded-lg border border-gray-200 py-2 pl-10 pr-10 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition"
                   placeholder="Enter your password"
@@ -114,10 +128,10 @@ const LoginPage = () => {
 
           <div className="mt-6 text-center">
             <p className="text-gray-400">
-              Don&apos;t have an account?{' '}
-              <span className="text-gray-300">
-                Contact admin to create one
-              </span>
+              Don't have an account?{' '}
+              <Link to="/register" className="text-blue-500 hover:underline">
+                Register
+              </Link>
             </p>
           </div>
         </div>

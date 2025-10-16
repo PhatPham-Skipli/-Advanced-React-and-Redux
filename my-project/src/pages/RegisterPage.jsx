@@ -1,18 +1,21 @@
-import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import React, { useState, useContext } from 'react'
+import { useNavigate, Link } from 'react-router-dom'
 import { IoPersonOutline, IoLockClosedOutline, IoMailOutline, IoEyeOffOutline, IoEyeOutline } from 'react-icons/io5'
 import { toast } from 'react-toastify'
+import AuthContext from '../context/AuthContext'
 
 const RegisterPage = () => {
   const [formData, setFormData] = useState({
     username: '',
     email: '',
+    fullName: '',
     password: '',
     confirmPassword: ''
   })
   const [isPasswordVisible, setIsPasswordVisible] = useState(false)
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
+  const { handleRegister } = useContext(AuthContext)
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
@@ -24,7 +27,7 @@ const RegisterPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!formData.username || !formData.email || !formData.password || !formData.confirmPassword) {
+    if (!formData.username || !formData.email || !formData.fullName || !formData.password || !formData.confirmPassword) {
       toast.error('Please fill in all fields')
       return
     }
@@ -33,11 +36,20 @@ const RegisterPage = () => {
       return
     }
     setLoading(true)
-    setTimeout(() => {
-      setLoading(false)
+    try {
+      await handleRegister({
+        username: formData.username,
+        email: formData.email,
+        fullName: formData.fullName,
+        password: formData.password
+      })
       toast.success('Register successful!')
       navigate('/login')
-    }, 1200)
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Register failed')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -98,6 +110,26 @@ const RegisterPage = () => {
             </div>
 
             <div>
+              <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-2">
+                Full Name
+              </label>
+              <div className="relative">
+                <IoPersonOutline className="absolute top-1/2 left-3 transform -translate-y-1/2 text-gray-400 text-lg" />
+                <input
+                  id="fullName"
+                  name="fullName"
+                  type="text"
+                  autoComplete="name"
+                  required
+                  className="block w-full rounded-lg border border-gray-200 py-2 pl-10 pr-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition"
+                  placeholder="Enter your full name"
+                  value={formData.fullName}
+                  onChange={handleChange}
+                />
+              </div>
+            </div>
+
+            <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
                 Password
               </label>
@@ -142,9 +174,16 @@ const RegisterPage = () => {
                   value={formData.confirmPassword}
                   onChange={handleChange}
                 />
+                <button
+                  type="button"
+                  onClick={togglePasswordVisibility}
+                  className="absolute top-1/2 right-3 transform -translate-y-1/2 text-gray-400 hover:text-blue-500 transition-colors"
+                  tabIndex={-1}
+                >
+                  {isPasswordVisible ? <IoEyeOffOutline /> : <IoEyeOutline />}
+                </button>
               </div>
             </div>
-
             <button
               type="submit"
               disabled={loading}
@@ -164,9 +203,9 @@ const RegisterPage = () => {
           <div className="mt-6 text-center">
             <p className="text-gray-400">
               Already have an account?{' '}
-              <a href="/login" className="text-blue-500 hover:underline">
+              <Link to="/login" className="text-blue-500 hover:underline">
                 Sign in
-              </a>
+              </Link>
             </p>
           </div>
         </div>
