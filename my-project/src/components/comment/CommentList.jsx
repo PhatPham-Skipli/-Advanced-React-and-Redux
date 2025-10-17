@@ -1,40 +1,26 @@
 import React, { useContext } from 'react';
+import CommentShow from './CommentShow';
 import CommentContext from '../../context/CommentContext';
-import CommentItem from './CommentItem';
+import CommentSkeleton from './CommentSkeleton';
 
 const CommentList = () => {
-  const { comments, clearComments } = useContext(CommentContext);
+  const { comments, loading } = useContext(CommentContext);
 
   return (
-    <div style={{
-      background: '#fff',
-      borderRadius: '8px',
-      padding: '1rem',
-      boxShadow: '0 1px 8px rgba(0,0,0,0.06)',
-      marginBottom: '2rem'
-    }}>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '12px' }}>
-        <button
-          onClick={clearComments}
-          style={{
-            padding: '6px 12px',
-            borderRadius: '4px',
-            border: 'none',
-            background: '#ef4444',
-            color: '#fff',
-            cursor: 'pointer'
-          }}
-          disabled={comments.length === 0}
-        >
-          Xóa tất cả
-        </button>
-      </div>
-      {comments.length === 0 ? (
-        <p style={{ color: '#888', textAlign: 'center' }}>No comments yet. Be the first to comment!</p>
+    <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+      {loading ? (
+        <CommentSkeleton />
+      ) : comments.length > 0 ? (
+        <div className="space-y-3">
+          {comments.map((comment) => (
+            <CommentShow key={comment.id} comment={comment} />
+          ))}
+        </div>
       ) : (
-        comments.map(comment => (
-          <CommentItem key={comment.id} comment={comment} />
-        ))
+        <div className="text-center py-12">
+          <p className="text-gray-400 text-lg mb-2">No comments yet</p>
+          <p className="text-gray-300 text-sm">Click "Add Comment" to create your first comment!</p>
+        </div>
       )}
     </div>
   );

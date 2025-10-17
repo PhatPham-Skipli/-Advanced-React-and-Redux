@@ -52,9 +52,6 @@ export class Account {
     @OneToMany(() => Comment, (comment) => comment.author)
     authoredComments!: Comment[];
 
-    @OneToMany(() => Comment, (comment) => comment.target)
-    receivedComments!: Comment[];
-
     @BeforeInsert()
     @BeforeUpdate()
     normalizeEmail() {

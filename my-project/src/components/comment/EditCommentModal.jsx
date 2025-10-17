@@ -1,50 +1,55 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
+import { IoCloseOutline } from "react-icons/io5";
 
 const EditCommentModal = ({ open, initialText, onClose, onSave }) => {
   const [text, setText] = useState(initialText);
 
   if (!open) return null;
 
-  return (
-    <div style={{
-      position: 'fixed',
-      top: 0, left: 0, right: 0, bottom: 0,
-      background: 'rgba(0,0,0,0.2)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 1000
-    }}>
-      <div style={{
-        background: '#fff',
-        borderRadius: '8px',
-        padding: '24px',
-        minWidth: '320px',
-        boxShadow: '0 2px 16px rgba(0,0,0,0.15)'
-      }}>
-        <h3>Edit Comment</h3>
+  const handleSave = () => {
+    if (text.trim()) {
+      onSave(text);
+    }
+  };
+
+  return createPortal(
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-2xl p-6 min-w-[500px] max-w-2xl mx-4 animate-fadeIn">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-bold text-purple-600">Edit Comment</h2>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-2 rounded-lg transition-colors"
+          >
+            <IoCloseOutline size={24} />
+          </button>
+        </div>
         <textarea
           value={text}
           onChange={e => setText(e.target.value)}
-          rows={3}
-          style={{ width: '100%', marginBottom: '16px', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
+          rows={6}
+          className="w-full p-4 border-2 border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent mb-4 resize-none"
+          autoFocus
         />
-        <div style={{ textAlign: 'right' }}>
+        <div className="flex justify-end gap-3">
           <button
             onClick={onClose}
-            style={{ marginRight: '8px', padding: '6px 12px', borderRadius: '4px', border: 'none', background: '#eee', color: '#333', cursor: 'pointer' }}
+            className="px-6 py-2 rounded-lg border-2 border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors"
           >
             Cancel
           </button>
           <button
-            onClick={() => onSave(text)}
-            style={{ padding: '6px 12px', borderRadius: '4px', border: 'none', background: '#7c3aed', color: '#fff', cursor: 'pointer' }}
+            onClick={handleSave}
+            disabled={!text.trim()}
+            className="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Save
+            Save Changes
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

@@ -1,6 +1,8 @@
 import HomePage from "../pages/HomePage";
 import CommentPage from "../pages/CommentPage";
 import HomeLayout from "../Layouts/HomeLayout";
+import { CommentProvider } from "../context/CommentContext";
+import ProtectedRoute from "./ProtectedRoute";
 
 const HomeRoutes = [
   {
@@ -12,9 +14,18 @@ const HomeRoutes = [
         element: <HomePage />,
       },
       {
-        path: "comments",
-        element: <CommentPage />,
-      }
+        element: <ProtectedRoute />,
+        children: [
+          {
+            path: "comments",
+            element: (
+              <CommentProvider>
+                <CommentPage />
+              </CommentProvider>
+            ),
+          },
+        ],
+      },
     ],
   },
 ];

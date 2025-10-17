@@ -1,5 +1,5 @@
 import React, { createContext, useState, useCallback, useEffect } from 'react';
-import { getComments, createComment, updateComment } from '../service/commentService';
+import { getComments } from '../../service/admin/commentService';
 
 const CommentContext = createContext();
 
@@ -38,29 +38,13 @@ export const CommentProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [pagination.page, pagination.limit, filters]);
+  }, [pagination.page, pagination.limit, filters.search, filters.order, filters.isActive]);
 
   useEffect(() => {
     fetchComments();
   }, [fetchComments]);
 
-  const addComment = useCallback(async (content) => {
-    try {
-      await createComment(content);
-      await fetchComments();
-    } catch (err) {
-      console.error('Create comment error:', err);
-    }
-  }, [fetchComments]);
-
-  const editComment = useCallback(async (id, content) => {
-    try {
-      await updateComment(id, content);
-      await fetchComments();
-    } catch (err) {
-      console.error('Update comment error:', err);
-    }
-  }, [fetchComments]);
+  const clearComments = useCallback(() => setComments([]), []);
 
   const updateFilters = useCallback((newFilters) => {
     setFilters(prev => ({ ...prev, ...newFilters }));
@@ -79,8 +63,7 @@ export const CommentProvider = ({ children }) => {
     setFilters: updateFilters,
     setPagination: updatePagination,
     fetchComments,
-    addComment,
-    updateComment: editComment,
+    clearComments,
   };
 
   return (

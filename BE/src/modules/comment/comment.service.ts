@@ -8,6 +8,8 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Like, Repository } from 'typeorm';
 import { AccountRole } from '@/enums';
+import { CreateCommentDto } from '@/modules/comment/dto/create-comment.dto';
+import { UpdateCommentDto } from '@/modules/comment/dto/update-comment.dto';
 
 @Injectable()
 export class CommentService {
@@ -40,48 +42,60 @@ export class CommentService {
                 where,
                 order: { createdAt: order },
                 skip: (page - 1) * limit,
-                take: limit
+                take: limit,
+                relations: ['author']
             });
 
-            return { data, total, page, limit };
+            const mappedData = data.map(
+                ({ id, content, author, isActive, createdAt, updatedAt }) => ({
+                    id,
+                    content,
+                    author: author.fullName || author.username,
+                    isActive,
+                    createdAt,
+                    updatedAt
+                })
+            );
+
+            return { data: mappedData, total, page, limit };
         } catch (error) {
             throw new BadRequestException('Failed to get comments');
         }
     }
 
-    async createCommentByAdmin(
-        adminId: string,
-        userId: string,
-        content: string
-    ): Promise<{ message: string }> {
-        try {
-            await this.datasource.transaction(async (manager) => {
-                const accountRepo = manager.getRepository(Account);
-                const commentRepo = manager.getRepository(Comment);
+    // async createCommentByAdmin(
+    //     adminId: string,
+    //     userId: string,
+    //     content: string
+    // ): Promise<{ message: string }> {
+    //     try {
+    //         await this.datasource.transaction(async (manager) => {
+    //             const accountRepo = manager.getRepository(Account);
+    //             const commentRepo = manager.getRepository(Comment);
 
-                const admin = await accountRepo.findOne({
-                    where: { id: adminId }
-                });
-                if (!admin || admin.role !== AccountRole.ADMIN)
-                    throw new ForbiddenException('Only admin can comment');
+    //             const admin = await accountRepo.findOne({
+    //                 where: { id: adminId }
+    //             });
+    //             if (!admin || admin.role !== AccountRole.ADMIN)
+    //                 throw new ForbiddenException('Only admin can comment');
 
-                const user = await accountRepo.findOne({
-                    where: { id: userId }
-                });
-                if (!user) throw new NotFoundException('Target user not found');
+    //             const user = await accountRepo.findOne({
+    //                 where: { id: userId }
+    //             });
+    //             if (!user) throw new NotFoundException('Target user not found');
 
-                const comment = commentRepo.create({
-                    author: admin,
-                    target: user,
-                    content
-                });
-                await commentRepo.save(comment);
-            });
-            return { message: 'Comment created successfully' };
-        } catch (error) {
-            throw new BadRequestException('Failed to create comment');
-        }
-    }
+    //             const comment = commentRepo.create({
+    //                 author: admin,
+    //                 target: user,
+    //                 content
+    //             });
+    //             await commentRepo.save(comment);
+    //         });
+    //         return { message: 'Comment created successfully' };
+    //     } catch (error) {
+    //         throw new BadRequestException('Failed to create comment');
+    //     }
+    // }
 
     async getAllCommentsForUser(
         userId: string,
@@ -92,7 +106,7 @@ export class CommentService {
         isActive?: boolean
     ): Promise<{ data: any[]; total: number; page: number; limit: number }> {
         try {
-            const where: any = { target: { id: userId } }; // target là user
+            const where: any = { author: { id: userId } };
             if (typeof isActive === 'boolean') {
                 where.isActive = isActive;
             }
@@ -109,10 +123,16 @@ export class CommentService {
                 relations: ['author']
             });
 
-            const mappedData = data.map((comment) => {
-                const { updatedAt, createdAt, ...rest } = comment;
-                return rest;
-            });
+            const mappedData = data.map(
+                ({ id, content, author, isActive, createdAt, updatedAt }) => ({
+                    id,
+                    content,
+                    author: author.fullName || author.username,
+                    isActive,
+                    createdAt,
+                    updatedAt
+                })
+            );
 
             return { data: mappedData, total, page, limit };
         } catch (error) {
@@ -120,6 +140,55 @@ export class CommentService {
                 throw error;
             }
             throw new Error('Failed to get comments for user');
+        }
+    }
+
+    async createSelfComment(
+        userId: string,
+        createCommentDto: CreateCommentDto
+    ): Promise<{ message: string }> {
+        try {
+            await this.datasource.transaction(async (manager) => {
+                const accountRepo = manager.getRepository(Account);
+                const commentRepo = manager.getRepository(Comment);
+
+                const user = await accountRepo.findOne({
+                    where: { id: userId }
+                });
+                if (!user) throw new NotFoundException('User not found');
+
+                const comment = commentRepo.create({
+                    author: user,
+                    content: createCommentDto.content
+                });
+                await commentRepo.save(comment);
+            });
+            return { message: 'Comment created successfully' };
+        } catch (error) {
+            throw new BadRequestException('Failed to create comment');
+        }
+    }
+
+    async updateComment(
+        id: string,
+        updateCommentDto: UpdateCommentDto
+    ): Promise<{ message: string }> {
+        try {
+            const comment = await this.commentRepository.findOne({
+                where: { id }
+            });
+            if (!comment) {
+                throw new NotFoundException('Comment not found');
+            }
+            comment.content = updateCommentDto.content;
+            await this.commentRepository.update(id, comment);
+            return { message: 'Comment updated successfully' };
+        } catch (error) {
+            if (error instanceof NotFoundException) {
+                throw error;
+            }
+
+            throw new BadRequestException('Failed to update comment');
         }
     }
 

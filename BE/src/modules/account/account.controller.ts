@@ -6,7 +6,8 @@ import {
     UseGuards,
     Body,
     Put,
-    Param
+    Param,
+    Delete
 } from '@nestjs/common';
 import { AccountService } from './account.service';
 import {
@@ -78,7 +79,7 @@ export class AccountController {
         );
     }
 
-    @Put('soft-delete/:id')
+    @Delete(':id')
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(AccountRole.ADMIN)
     @ApiOperation({ summary: 'Soft delete account (admin only)' })

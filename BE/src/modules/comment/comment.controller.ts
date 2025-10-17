@@ -7,7 +7,8 @@ import {
     Put,
     Param,
     Body,
-    Post
+    Post,
+    Delete
 } from '@nestjs/common';
 import { CommentService } from './comment.service';
 import {
@@ -21,6 +22,9 @@ import { JwtAuthGuard } from '../auth/guards/jwt.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '@/common/decorators/roles.decorator';
 import { AccountRole } from '@/enums';
+import { CreateCommentDto } from '@/modules/comment/dto/create-comment.dto';
+import { create } from 'domain';
+import { UpdateCommentDto } from '@/modules/comment/dto/update-comment.dto';
 
 @ApiTags('comment')
 @ApiBearerAuth()
@@ -59,20 +63,34 @@ export class CommentController {
         );
     }
 
-    @Post(':userId')
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(AccountRole.ADMIN)
-    @ApiOperation({ summary: 'Admin create comment for user' })
+    // @Post(':userId')
+    // @UseGuards(JwtAuthGuard, RolesGuard)
+    // @Roles(AccountRole.ADMIN)
+    // @ApiOperation({ summary: 'Admin create comment for user' })
+    // @ApiResponse({ status: 200, description: 'Comment created successfully' })
+    // async createComment(
+    //     @Req() req,
+    //     @Param('userId') userId: string,
+    //     @Body('content') content: string
+    // ) {
+    //     return this.commentService.createCommentByAdmin(
+    //         req.user.id,
+    //         userId,
+    //         content
+    //     );
+    // }
+
+    @Post()
+    @UseGuards(JwtAuthGuard)
+    @ApiOperation({ summary: 'User create comment for themselves' })
     @ApiResponse({ status: 200, description: 'Comment created successfully' })
-    async createComment(
+    async createSelfComment(
         @Req() req,
-        @Param('userId') userId: string,
-        @Body('content') content: string
+        @Body() createCommentDto: CreateCommentDto
     ) {
-        return this.commentService.createCommentByAdmin(
+        return this.commentService.createSelfComment(
             req.user.id,
-            userId,
-            content
+            createCommentDto
         );
     }
 
@@ -111,7 +129,18 @@ export class CommentController {
         );
     }
 
-    @Put('soft-delete/:id')
+    @Put(':id')
+    @UseGuards(JwtAuthGuard)
+    @ApiOperation({ summary: 'Update comment by id (owner or admin)' })
+    @ApiResponse({ status: 200, description: 'Comment updated successfully' })
+    async updateComment(
+        @Param('id') id: string,
+        @Body() updateCommentDto: UpdateCommentDto
+    ) {
+        return await this.commentService.updateComment(id, updateCommentDto);
+    }
+
+    @Delete('soft-delete/:id')
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(AccountRole.ADMIN)
     @ApiOperation({ summary: 'Soft delete comment (admin only)' })

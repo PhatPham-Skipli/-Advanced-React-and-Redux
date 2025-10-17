@@ -8,7 +8,7 @@ const Sidebar = () => {
     const menuItems = [
         {
             name: "Accounts",
-            path: "/admi/accounts",
+            path: "/admin/accounts",
             icon: <IoListOutline />
         },
         {

@@ -22,12 +22,6 @@ export class Comment {
     })
     author!: Account;
 
-    @ManyToOne(() => Account, (account) => account.receivedComments, {
-        nullable: false,
-        onDelete: 'CASCADE'
-    })
-    target!: Account;
-
     @Column({ default: true })
     isActive!: boolean;
 

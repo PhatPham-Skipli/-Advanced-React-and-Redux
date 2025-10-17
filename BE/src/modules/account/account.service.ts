@@ -71,7 +71,11 @@ export class AccountService {
             });
 
             if (!account) {
-                throw new BadRequestException('Account not found');
+                throw new NotFoundException('Account not found');
+            }
+
+            if (!account.isActive) {
+                throw new BadRequestException('Account is inactive');
             }
 
             const isPasswordValid = await bcrypt.compare(
@@ -93,7 +97,7 @@ export class AccountService {
 
             return result;
         } catch (error) {
-            if (error instanceof BadRequestException) {
+            if (error instanceof BadRequestException || error instanceof NotFoundException) {
                 throw error;
             }
             throw new Error('Failed to validate account');
@@ -204,8 +208,14 @@ export class AccountService {
                 );
             }
 
-            account.password = changePasswordDto.newPassword;
-            await this.accountRepository.save(account);
+            const hashedNewPassword = await bcrypt.hash(
+                changePasswordDto.newPassword,
+                10
+            );
+            await this.accountRepository.update(id, {
+                password: hashedNewPassword
+            });
+
             return { message: 'Password changed successfully' };
         } catch (error) {
             if (
@@ -230,11 +240,10 @@ export class AccountService {
                 throw new BadRequestException('Account is already inactive');
             }
 
-            account.isActive = false;
-            await this.accountRepository.save(account);
+            await this.accountRepository.update(id, { isActive: false });
             return { message: 'Account deactivated successfully' };
         } catch (error) {
-            if (error instanceof NotFoundException) {
+            if (error instanceof NotFoundException || error instanceof BadRequestException) {
                 throw error;
             }
             throw new Error('Failed to delete account');
@@ -253,11 +262,10 @@ export class AccountService {
                 throw new BadRequestException('Account is already active');
             }
 
-            account.isActive = true;
-            await this.accountRepository.save(account);
+            await this.accountRepository.update(id, { isActive: true });
             return { message: 'Account reactivated successfully' };
         } catch (error) {
-            if (error instanceof NotFoundException) {
+            if (error instanceof NotFoundException || error instanceof BadRequestException) {
                 throw error;
             }
             throw new Error('Failed to restore account');

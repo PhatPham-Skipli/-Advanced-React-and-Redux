@@ -1,12 +1,6 @@
-import axios from "axios";
+import api from "../config/axios";
 
-const API_URL = import.meta.env.VITE_API_URL;
-
-export const getProfile = async (token) => {
-  const response = await axios.get(`${API_URL}/account/me`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+export const getProfile = async () => {
+  const response = await api.get("/account/me");
   return response.data;
 };
